@@ -14,10 +14,8 @@
         {
             using var dbContext = new BookShopContext();
             DbInitializer.ResetDatabase(dbContext);
-
-            var n = RemoveBooks(dbContext);
-            Console.WriteLine(n);
         }
+
 
         // P02 Age Restriction
         public static string GetBooksByAgeRestriction(BookShopContext dbContext, string ageRestriction)
