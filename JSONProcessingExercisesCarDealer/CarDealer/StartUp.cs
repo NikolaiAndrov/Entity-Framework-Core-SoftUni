@@ -13,9 +13,9 @@
         {
             CarDealerContext context = new CarDealerContext();
 
-            string inputJson = File.ReadAllText(@"../../../Datasets/parts.json");
+            string inputJson = File.ReadAllText(@"../../../Datasets/sales.json");
 
-            string result = ImportParts(context, inputJson);
+            string result = ImportSales(context, inputJson);
             Console.WriteLine(result);
         }
 
@@ -59,6 +59,68 @@
             context.SaveChanges();
 
             return $"Successfully imported {partsToAdd.Count}.";
+        }
+
+        //P11 Import Cars
+        public static string ImportCars(CarDealerContext context, string inputJson)
+        {
+            IMapper mapper = CreateMapper();
+            ImportCarDto[] importCarDtos = JsonConvert.DeserializeObject<ImportCarDto[]>(inputJson);
+            ICollection<Car> carsToAdd = new HashSet<Car>();
+
+            foreach (var dto in importCarDtos)
+            {
+                Car currentCar = mapper.Map<Car>(dto);
+
+                foreach (var id in dto.PartsId)
+                {
+                    if (!context.Parts.Any(p => p.Id == id))
+                    {
+                        continue;
+                    }
+
+                    currentCar.PartsCars.Add(new PartCar
+                    {
+                        PartId = id,
+                    });
+                }
+
+                carsToAdd.Add(currentCar);
+            }
+
+            context.Cars.AddRange(carsToAdd);
+            context.SaveChanges();
+
+            return $"Successfully imported {carsToAdd.Count}.";
+        }
+
+        //P12 Import Customers
+        public static string ImportCustomers(CarDealerContext context, string inputJson)
+        {
+            IMapper mapper = CreateMapper();
+
+            ImportCustomerDto[] importCustomerDtos = JsonConvert.DeserializeObject<ImportCustomerDto[]>(inputJson);
+
+            Customer[] customers = mapper.Map<Customer[]>(importCustomerDtos);
+
+            context.Customers.AddRange(customers);
+            context.SaveChanges();
+
+            return $"Successfully imported {customers.Length}.";
+        }
+
+        //P13 Import Sales
+        public static string ImportSales(CarDealerContext context, string inputJson)
+        {
+            IMapper mapper = CreateMapper();
+
+            ImportSaleDto[] importSaleDtos = JsonConvert.DeserializeObject<ImportSaleDto[]>(inputJson);
+
+            Sale[] salesToAdd = mapper.Map<Sale[]>(importSaleDtos);
+         
+            context.Sales.AddRange(salesToAdd);
+            context.SaveChanges();
+            return $"Successfully imported {salesToAdd.Count()}.";
         }
 
         public static IMapper CreateMapper()
