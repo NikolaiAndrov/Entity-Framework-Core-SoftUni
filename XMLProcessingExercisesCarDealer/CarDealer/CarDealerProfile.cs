@@ -14,11 +14,22 @@
             //Part
             this.CreateMap<ImportPartDto, Part>()
                 .ForMember(d => d.SupplierId, 
-                opt => opt.MapFrom(s => s.SupplierId.Value));
+                opt => opt.MapFrom(s => s.SupplierId!.Value));
 
             //Car
             this.CreateMap<ImportCarDto, Car>()
-                .ForSourceMember(s => s.Parts, opt => opt.DoNotValidate());
+                .ForSourceMember(s => s.Parts, 
+                opt => opt.DoNotValidate());
+
+            //Customer
+            this.CreateMap<ImportCustomerDto, Customer>()
+                .ForMember(d => d.BirthDate, 
+                opt => opt.MapFrom(s => DateTime.Parse(s.BirthDate)));
+
+            //Sale
+            this.CreateMap<ImportSaleDto, Sale>()
+                .ForMember(d => d.CarId,
+                opt => opt.MapFrom(s => s.CarId!.Value));
         }
     }
 }

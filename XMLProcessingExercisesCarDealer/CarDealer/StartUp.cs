@@ -5,6 +5,7 @@
     using CarDealer.DTOs.Import;
     using CarDealer.Models;
     using CarDealer.Utilities;
+    using Castle.Core.Resource;
     using System.IO;
 
     public class StartUp
@@ -12,9 +13,9 @@
         public static void Main()
         {
             CarDealerContext context = new CarDealerContext();
-            string inputXml = File.ReadAllText("../../../Datasets/cars.xml");
+            string inputXml = File.ReadAllText("../../../Datasets/sales.xml");
 
-            string result = ImportCars(context, inputXml);
+            string result = ImportSales(context, inputXml);
             Console.WriteLine(result);
         }
 
@@ -119,6 +120,63 @@
             context.SaveChanges();
 
             return $"Successfully imported {carsToAdd.Count}";
+        }
+
+        //P12 Import Customers
+        public static string ImportCustomers(CarDealerContext context, string inputXml)
+        {
+            IMapper mapper = CreateMapper();
+            XmlHelper xmlHelper = new XmlHelper();
+
+            ICollection<ImportCustomerDto> importCustomerDtos = xmlHelper.Deserialize<HashSet<ImportCustomerDto>>(inputXml, "Customers");
+
+            ICollection<Customer> customersToAdd = new HashSet<Customer>();
+
+            foreach (var dto in importCustomerDtos)
+            {
+                if (string.IsNullOrEmpty(dto.Name) || string.IsNullOrEmpty(dto.BirthDate))
+                {
+                    continue;
+                }
+
+                Customer customer = mapper.Map<Customer>(dto);
+                customersToAdd.Add(customer);
+            }
+
+            context.Customers.AddRange(customersToAdd);
+            context.SaveChanges();
+
+            return $"Successfully imported {customersToAdd.Count}";
+        }
+
+        //P13 Import Sales
+        public static string ImportSales(CarDealerContext context, string inputXml)
+        {
+            IMapper mapper = CreateMapper();
+            XmlHelper xmlHelper = new XmlHelper();
+            ICollection<int> carIds = context.Cars
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            ICollection<ImportSaleDto> importSaleDtos = xmlHelper.Deserialize<HashSet<ImportSaleDto>>(inputXml, "Sales");
+
+            ICollection<Sale> salesToAdd = new HashSet<Sale>();
+
+            foreach (var dto in importSaleDtos)
+            {
+                if (!dto.CarId.HasValue || !carIds.Contains(dto.CarId.Value))
+                {
+                    continue;
+                }
+
+                Sale sale = mapper.Map<Sale>(dto);
+                salesToAdd.Add(sale);
+            }
+
+            context.Sales.AddRange(salesToAdd);
+            context.SaveChanges();
+
+            return $"Successfully imported {salesToAdd.Count}";
         }
 
         public static IMapper CreateMapper()
