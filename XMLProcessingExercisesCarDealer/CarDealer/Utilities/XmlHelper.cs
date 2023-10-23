@@ -10,9 +10,9 @@
             XmlSerializer xmlSerializer = new XmlSerializer(typeof(T), xmlRoot);
 
             using StringReader reader = new StringReader(inputXml);
-            T importDtos = (T)xmlSerializer.Deserialize(reader);
+            T deserializedDtos = (T)xmlSerializer.Deserialize(reader);
 
-            return importDtos;
+            return deserializedDtos;
         }
 
         public T[] DeserializeCollection<T>(string inputXml, string rootName)
@@ -21,9 +21,9 @@
             XmlSerializer xmlSerializer = new XmlSerializer(typeof(T[]), xmlRoot);
 
             using StringReader reader = new StringReader(inputXml);
-            T[] importDtos = (T[])xmlSerializer.Deserialize(reader);
+            T[] deserializedDtos = (T[])xmlSerializer.Deserialize(reader);
 
-            return importDtos;
+            return deserializedDtos;
         }
     }
 }

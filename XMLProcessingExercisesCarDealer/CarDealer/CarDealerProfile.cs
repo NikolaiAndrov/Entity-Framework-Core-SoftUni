@@ -8,7 +8,17 @@
     {
         public CarDealerProfile()
         {
+            //Suplier
             this.CreateMap<ImportSupplierDto, Supplier>();
+
+            //Part
+            this.CreateMap<ImportPartDto, Part>()
+                .ForMember(d => d.SupplierId, 
+                opt => opt.MapFrom(s => s.SupplierId.Value));
+
+            //Car
+            this.CreateMap<ImportCarDto, Car>()
+                .ForSourceMember(s => s.Parts, opt => opt.DoNotValidate());
         }
     }
 }
