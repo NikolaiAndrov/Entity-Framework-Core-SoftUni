@@ -1,21 +1,22 @@
 ﻿namespace CarDealer
 {
     using AutoMapper;
+    using AutoMapper.QueryableExtensions;
     using CarDealer.Data;
+    using CarDealer.DTOs.Export;
     using CarDealer.DTOs.Import;
     using CarDealer.Models;
     using CarDealer.Utilities;
-    using Castle.Core.Resource;
-    using System.IO;
+
 
     public class StartUp
     {
         public static void Main()
         {
             CarDealerContext context = new CarDealerContext();
-            string inputXml = File.ReadAllText("../../../Datasets/sales.xml");
+            // string inputXml = File.ReadAllText("../../../Datasets/sales.xml");
 
-            string result = ImportSales(context, inputXml);
+            string result = GetLocalSuppliers(context);
             Console.WriteLine(result);
         }
 
@@ -177,6 +178,54 @@
             context.SaveChanges();
 
             return $"Successfully imported {salesToAdd.Count}";
+        }
+
+        //P14 Export Cars With Distance
+        public static string GetCarsWithDistance(CarDealerContext context)
+        {
+            IMapper mapper = CreateMapper();
+
+            ExportCarDto[] exportCars = context.Cars
+                .Where(x => x.TraveledDistance > 2000000)
+                .OrderBy(x => x.Make)
+                .ThenBy(x => x.Model)
+                .Take(10)
+                .ProjectTo<ExportCarDto>(mapper.ConfigurationProvider)
+                .ToArray();
+
+            XmlHelper xmlHelper = new XmlHelper();
+            return xmlHelper.Serialize<ExportCarDto[]>(exportCars, "cars");
+        }
+
+        //P15 Export Cars from Make BMW
+        public static string GetCarsFromMakeBmw(CarDealerContext context)
+        {
+            IMapper mapper = CreateMapper();
+
+            ExportBmwCarDto[] bmwCars = context.Cars
+                .Where(x => x.Make.ToUpper() == "BMW")
+                .OrderBy(x => x.Model)
+                .ThenByDescending(x => x.TraveledDistance)
+                .ProjectTo<ExportBmwCarDto>(mapper.ConfigurationProvider)
+                .ToArray();
+
+            XmlHelper xmlHelper = new XmlHelper();
+            return xmlHelper.Serialize<ExportBmwCarDto[]>(bmwCars, "cars");
+        }
+
+        //P16 Export Local Suppliers
+        public static string GetLocalSuppliers(CarDealerContext context)
+        {
+            IMapper mapper = CreateMapper();
+
+            ExportLocalSuppliersDto[] suppliers = context.Suppliers
+                .Where(s => s.IsImporter == false)
+                .ProjectTo<ExportLocalSuppliersDto>(mapper.ConfigurationProvider)
+                .ToArray();
+
+            XmlHelper XmlHelper = new XmlHelper();
+            
+            return XmlHelper.Serialize<ExportLocalSuppliersDto[]>(suppliers, "suppliers");
         }
 
         public static IMapper CreateMapper()

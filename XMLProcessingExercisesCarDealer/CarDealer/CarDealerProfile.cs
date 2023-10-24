@@ -1,6 +1,7 @@
 ﻿namespace CarDealer
 {
     using AutoMapper;
+    using CarDealer.DTOs.Export;
     using CarDealer.DTOs.Import;
     using CarDealer.Models;
 
@@ -10,6 +11,10 @@
         {
             //Suplier
             this.CreateMap<ImportSupplierDto, Supplier>();
+
+            this.CreateMap<Supplier, ExportLocalSuppliersDto>()
+                .ForMember(d => d.PartsCount,
+                opt => opt.MapFrom(s => s.Parts.Count()));
 
             //Part
             this.CreateMap<ImportPartDto, Part>()
@@ -21,6 +26,10 @@
                 .ForSourceMember(s => s.Parts, 
                 opt => opt.DoNotValidate());
 
+            this.CreateMap<Car, ExportCarDto>();
+
+            this.CreateMap<Car, ExportBmwCarDto>();
+
             //Customer
             this.CreateMap<ImportCustomerDto, Customer>()
                 .ForMember(d => d.BirthDate, 
@@ -30,6 +39,8 @@
             this.CreateMap<ImportSaleDto, Sale>()
                 .ForMember(d => d.CarId,
                 opt => opt.MapFrom(s => s.CarId!.Value));
+
+            
         }
     }
 }
