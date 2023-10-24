@@ -7,16 +7,16 @@
     using CarDealer.DTOs.Import;
     using CarDealer.Models;
     using CarDealer.Utilities;
-
+    using System.Linq;
 
     public class StartUp
     {
         public static void Main()
         {
             CarDealerContext context = new CarDealerContext();
-            // string inputXml = File.ReadAllText("../../../Datasets/sales.xml");
+            //string inputXml = File.ReadAllText("../../../Datasets/sales.xml");
 
-            string result = GetLocalSuppliers(context);
+            string result = GetTotalSalesByCustomer(context);
             Console.WriteLine(result);
         }
 
@@ -63,8 +63,8 @@
 
             foreach (var dto in partDtos)
             {
-                if (string.IsNullOrEmpty(dto.Name) || 
-                    dto.SupplierId == null || 
+                if (string.IsNullOrEmpty(dto.Name) ||
+                    dto.SupplierId == null ||
                     !supplierIds.Contains(dto.SupplierId.Value))
                 {
                     continue;
@@ -111,7 +111,7 @@
                         continue;
                     }
 
-                    car.PartsCars.Add(new PartCar { PartId = id.PartId});
+                    car.PartsCars.Add(new PartCar { PartId = id.PartId });
                 }
 
                 carsToAdd.Add(car);
@@ -224,8 +224,75 @@
                 .ToArray();
 
             XmlHelper XmlHelper = new XmlHelper();
-            
+
             return XmlHelper.Serialize<ExportLocalSuppliersDto[]>(suppliers, "suppliers");
+        }
+
+        //P17 Export Cars with Their List of Parts
+        public static string GetCarsWithTheirListOfParts(CarDealerContext context)
+        {
+            IMapper mapper = CreateMapper();
+
+            ExportCartWithListOfPartsDto[] parts = context.Cars
+                .OrderByDescending(x => x.TraveledDistance)
+                .ThenBy(x => x.Model)
+                .Take(5)
+                .ProjectTo<ExportCartWithListOfPartsDto>(mapper.ConfigurationProvider)
+                .ToArray();
+
+            XmlHelper xmlHelper = new XmlHelper();
+            return xmlHelper.Serialize(parts, "cars");
+        }
+
+        //P18 Export Total Sales by Customer
+        public static string GetTotalSalesByCustomer(CarDealerContext context)
+        {
+            var customerInfo = context.Customers
+                .Where(c => c.Sales.Count() > 0)
+                .ToArray()
+                .Select(c => new ExportCustomerDto
+                {
+                    Name = c.Name,
+                    BoughtCars = c.Sales.Count(),
+                    SpentMoney = c.IsYoungDriver
+                        ? ((double)c.Sales.Select(s => s.Car).SelectMany(c => c.PartsCars).Sum(p => p.Part.Price) * 0.95)
+                        : (double)c.Sales.Select(s => s.Car).SelectMany(c => c.PartsCars).Sum(p => p.Part.Price)
+                })
+                .OrderByDescending(x => x.SpentMoney)
+                .ToList();
+
+
+            IMapper mapper = CreateMapper();
+
+            var customerInfoOutput = mapper.Map<List<ExportCustomerOutputDto>>(customerInfo);
+
+            XmlHelper xmlHelper = new XmlHelper();
+
+            return xmlHelper.Serialize(customerInfoOutput, "customers");
+        }
+
+        //P19 Export Sales with Applied Discount
+        public static string GetSalesWithAppliedDiscount(CarDealerContext context)
+        {
+            var sales = context.Sales
+                .Select(s => new ExportSaleDto
+                {
+                    Car = new ExportSaleCarDto
+                    {
+                        Make = s.Car.Make,
+                        Model = s.Car.Model,
+                        TraveledDistance = s.Car.TraveledDistance
+                    },
+                    Discount = s.Discount,
+                    CustomerName = s.Customer.Name,
+                    Price = (double)(s.Car.PartsCars.Sum(cp => cp.Part.Price)),
+                    PriceWithDiscount = (double)(s.Car.PartsCars.Sum(cp => cp.Part.Price) * (1 - s.Discount / 100))
+                })
+                .ToArray();
+
+            XmlHelper xmlHelper = new XmlHelper();
+
+            return xmlHelper.Serialize(sales, "sales");
         }
 
         public static IMapper CreateMapper()
