@@ -249,14 +249,13 @@
         {
             var customerInfo = context.Customers
                 .Where(c => c.Sales.Count() > 0)
-                .ToArray()
                 .Select(c => new ExportCustomerDto
                 {
                     Name = c.Name,
                     BoughtCars = c.Sales.Count(),
                     SpentMoney = c.IsYoungDriver
-                        ? ((double)c.Sales.Select(s => s.Car).SelectMany(c => c.PartsCars).Sum(p => p.Part.Price) * 0.95)
-                        : (double)c.Sales.Select(s => s.Car).SelectMany(c => c.PartsCars).Sum(p => p.Part.Price)
+                        ? Math.Round(((double)c.Sales.Select(s => s.Car).SelectMany(c => c.PartsCars).Sum(p => p.Part.Price) * 0.95), 2)
+                        : Math.Round((double)c.Sales.Select(s => s.Car).SelectMany(c => c.PartsCars).Sum(p => p.Part.Price), 2)
                 })
                 .OrderByDescending(x => x.SpentMoney)
                 .ToList();
