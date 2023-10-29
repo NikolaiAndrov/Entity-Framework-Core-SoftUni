@@ -17,6 +17,9 @@
                 .ForMember(d => d.MakeType, 
                     //opt => opt.MapFrom(s => Enum.Parse<MakeType>(s.MakeType.ToString())))
                     opt => opt.MapFrom(s => (MakeType)s.MakeType));
+
+            //Client
+            this.CreateMap<ImportClientDto, Client>();
         }
     }
 }

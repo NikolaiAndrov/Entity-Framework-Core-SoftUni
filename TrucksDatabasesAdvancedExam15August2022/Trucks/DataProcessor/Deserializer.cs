@@ -7,6 +7,7 @@
     using DataProcessor.ImportDto;
     using Trucks.Data.Models;
     using Utilities;
+    using Newtonsoft.Json;
 
     public class Deserializer
     {
@@ -68,7 +69,53 @@
         }
         public static string ImportClient(TrucksContext context, string jsonString)
         {
-            throw new NotImplementedException();
+            StringBuilder sb = new StringBuilder();
+
+            IMapper mapper = CreateMapper();
+
+            ImportClientDto[] importClientDtos = JsonConvert.DeserializeObject<ImportClientDto[]>(jsonString);
+
+            ICollection<int> existingTrucks = context.Trucks
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            ICollection<Client> clients = new HashSet<Client>();
+
+            foreach (var clientDto in importClientDtos)
+            {
+                if (!IsValid(clientDto) || clientDto.Type == "usual")
+                {
+                    sb.AppendLine(ErrorMessage);
+                    continue;
+                }
+
+                Client client = mapper.Map<Client>(clientDto);
+
+                foreach (var truckId in clientDto.TruckIds)
+                {
+                    if (!existingTrucks.Contains(truckId))
+                    {
+                        sb.AppendLine(ErrorMessage);
+                        continue;
+                    }
+
+                    ClientTruck clientTruck = new ClientTruck
+                    {
+                        Client = client,
+                        TruckId = truckId
+                    };
+
+                    client.ClientsTrucks.Add(clientTruck);
+                }
+
+                clients.Add(client);
+                sb.AppendLine(string.Format(SuccessfullyImportedClient, client.Name, client.ClientsTrucks.Count()));
+            }
+
+            context.Clients.AddRange(clients);
+            context.SaveChanges();
+
+            return sb.ToString().TrimEnd();
         }
 
         private static bool IsValid(object dto)
