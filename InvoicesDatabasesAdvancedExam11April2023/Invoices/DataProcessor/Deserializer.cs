@@ -1,10 +1,16 @@
 ﻿namespace Invoices.DataProcessor
 {
     using System.ComponentModel.DataAnnotations;
+    using System.Runtime.CompilerServices;
+    using System.Text;
+    using AutoMapper;
     using Invoices.Data;
+    using Invoices.Data.Models;
+    using Invoices.DataProcessor.ImportDto;
+    using Invoices.Utilities;
 
     public class Deserializer
-    {
+    {         
         private const string ErrorMessage = "Invalid data!";
 
         private const string SuccessfullyImportedClients
@@ -19,7 +25,47 @@
 
         public static string ImportClients(InvoicesContext context, string xmlString)
         {
-            throw new NotImplementedException();
+            StringBuilder sb = new StringBuilder();
+
+            IMapper mapper = AutoMapperConfiguration.CreateMapper();
+
+            XmlParser xmlParser = new XmlParser();
+
+            ICollection<Client> validClients = new HashSet<Client>();
+
+            ImportClientDto[] importClientDtos = xmlParser.Deserialize<ImportClientDto[]>(xmlString, "Clients");
+
+            foreach (var clientDto in importClientDtos)
+            {
+                if (!IsValid(clientDto))
+                {
+                    sb.AppendLine(ErrorMessage);
+                    continue;
+                }
+
+                Client client = mapper.Map<Client>(clientDto);
+
+                foreach (var addressDto in clientDto.Address)
+                {
+                    if (!IsValid(addressDto))
+                    {
+                        sb.AppendLine(ErrorMessage);
+                        continue;
+                    }
+
+                    Address address = mapper.Map<Address>(addressDto);
+
+                    client.Addresses.Add(address);
+                }
+
+                validClients.Add(client);
+                sb.AppendLine(string.Format(SuccessfullyImportedClients, client.Name));
+            }
+
+            context.AddRange(validClients);
+            context.SaveChanges();
+
+            return sb.ToString().TrimEnd();
         }
 
 
