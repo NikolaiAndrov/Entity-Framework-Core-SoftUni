@@ -25,13 +25,5 @@
         public const int ClientNameMaxLength = 25;
         public const int ClientNumberVatMinLength = 10;
         public const int ClientNumberVatMaxLength = 15;
-
-        //ImportInvoiceDto
-        public const int CurrencyTypeMinValue = 0;
-        public const int CurrencyTypeMaxValue = 2;
-
-        //ImportProductDto
-        public const int CategoryTypeMinValue = 0;
-        public const int CategoryTypeMaxValue = 4;
     }
 }
