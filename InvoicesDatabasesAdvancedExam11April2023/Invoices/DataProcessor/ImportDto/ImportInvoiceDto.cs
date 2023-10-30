@@ -14,11 +14,11 @@
 
         [Required]
         [JsonProperty("IssueDate")]
-        public DateTime IssueDate { get; set; }// = null!;
+        public string IssueDate { get; set; } = null!;
 
         [Required]
         [JsonProperty("DueDate")]
-        public DateTime DueDate { get; set; }// = null!;
+        public string DueDate { get; set; } = null!;
 
         [Required]
         [JsonProperty("Amount")]

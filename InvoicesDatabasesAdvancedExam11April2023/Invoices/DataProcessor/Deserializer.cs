@@ -12,6 +12,7 @@
     using Newtonsoft.Json;
     using System.Globalization;
     using Invoices.Common;
+    using Invoices.Data.Models.Enums;
 
     public class Deserializer
     {
@@ -76,27 +77,49 @@
         {
             StringBuilder sb = new StringBuilder();
 
-            IMapper mapper = AutoMapperConfiguration.CreateMapper();
-
-            JsonSerializerSettings settings = new JsonSerializerSettings
-            {
-                Culture = CultureInfo.InvariantCulture
-            };
-
-            ImportInvoiceDto[] importInvoiceDtos = JsonConvert.DeserializeObject<ImportInvoiceDto[]>(jsonString, settings);
+            ImportInvoiceDto[] importInvoiceDtos = JsonConvert.DeserializeObject<ImportInvoiceDto[]>(jsonString);
 
             ICollection<Invoice> validInvoices = new HashSet<Invoice>();
 
+            ICollection<int> existingClientIds = context.Clients
+                .Select(c => c.Id)
+                .ToHashSet();
+
             foreach (var invoiceDto in importInvoiceDtos)
             {
-                if (!IsValid(invoiceDto) ||
-                    invoiceDto.DueDate < invoiceDto.IssueDate)
+                DateTime issueDate;
+                DateTime dueDate;
+
+                try
+                {
+                    string format = "yyyy-MM-ddTHH:mm:ss";
+                    issueDate = DateTime.ParseExact(invoiceDto.IssueDate, format, CultureInfo.InvariantCulture);
+                    dueDate = DateTime.ParseExact(invoiceDto.DueDate, format, CultureInfo.InvariantCulture);
+                }
+                catch (Exception)
                 {
                     sb.AppendLine(ErrorMessage);
                     continue;
                 }
 
-                Invoice invoice = mapper.Map<Invoice>(invoiceDto);
+                if (!IsValid(invoiceDto) ||
+                    dueDate < issueDate ||
+                    !existingClientIds.Contains(invoiceDto.ClientId))
+                {
+                    sb.AppendLine(ErrorMessage);
+                    continue;
+                }
+
+                Invoice invoice = new Invoice
+                {
+                    Number = invoiceDto.Number,
+                    IssueDate = issueDate,
+                    DueDate = dueDate,
+                    Amount = invoiceDto.Amount,
+                    CurrencyType = (CurrencyType)invoiceDto.CurrencyType,
+                    ClientId = invoiceDto.ClientId,
+                };
+
                 validInvoices.Add(invoice);
 
                 sb.AppendLine(string.Format(SuccessfullyImportedInvoices, invoice.Number));
