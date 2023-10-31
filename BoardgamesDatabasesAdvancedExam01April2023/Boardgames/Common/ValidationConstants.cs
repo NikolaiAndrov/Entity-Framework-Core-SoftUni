@@ -22,5 +22,9 @@
         public const int CreatorFirstNameMaxLength = 7;
         public const int CreatorLastNameMinLength = 2;
         public const int CreatorLastNameMaxLength = 7;
+
+        //ImportBoardgameDto
+        public const int BoardGameCategoryTypeMinValue = 0;
+        public const int BoardGameCategoryTypeMaxValue = 4;
     }
 }
