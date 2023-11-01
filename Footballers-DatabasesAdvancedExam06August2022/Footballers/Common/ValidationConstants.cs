@@ -16,6 +16,8 @@
         public const string TeamNameRegex = @"^[A-Za-z\d\s\.\-]{3,}$";
         public const int TeamNationalityMinLength = 2;
         public const int TeamNationalityMaxLength = 40;
+        public const int TeamTrophiesMinValue = 1;
+        public const int TeamTrophiesMaxValue = int.MaxValue;
 
         //Coach
         public const int CoachNameMinLength = 2;

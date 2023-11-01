@@ -1,10 +1,12 @@
 ﻿namespace Footballers.DataProcessor
 {
+    using AutoMapper;
     using Footballers.Data;
     using Footballers.Data.Models;
     using Footballers.Data.Models.Enums;
     using Footballers.DataProcessor.ImportDto;
     using Footballers.Utilities;
+    using Newtonsoft.Json;
     using System.ComponentModel.DataAnnotations;
     using System.Globalization;
     using System.Text;
@@ -92,7 +94,49 @@
         {
             StringBuilder sb = new StringBuilder();
 
+            IMapper mapper = AutoMapperConfiguration.CreateMapper();
 
+            ICollection<int> validFootollerIds = context.Footballers
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            ICollection<Team> validTeams = new HashSet<Team>();
+
+            ImportTeamDto[] impportTeamDtos = JsonConvert.DeserializeObject<ImportTeamDto[]>(jsonString);
+
+            foreach (var teamDto in impportTeamDtos)
+            {
+                if (!IsValid(teamDto))
+                {
+                    sb.AppendLine(ErrorMessage);
+                    continue;
+                }
+
+                Team team = mapper.Map<Team>(teamDto);
+
+                foreach (var footollerId in teamDto.FootballerIds)
+                {
+                    if (!validFootollerIds.Contains(footollerId))
+                    {
+                        sb.AppendLine(ErrorMessage);
+                        continue;
+                    }
+
+                    TeamFootballer teamFootballer = new TeamFootballer
+                    {
+                        Team = team,
+                        FootballerId = footollerId
+                    };
+
+                    team.TeamsFootballers.Add(teamFootballer);
+                }
+
+                validTeams.Add(team);
+                sb.AppendLine(string.Format(SuccessfullyImportedTeam, team.Name, team.TeamsFootballers.Count()));
+            }
+
+            context.Teams.AddRange(validTeams);
+            context.SaveChanges();
 
             return sb.ToString().TrimEnd();
         }
