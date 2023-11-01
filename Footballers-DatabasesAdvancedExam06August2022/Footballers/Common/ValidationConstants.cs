@@ -5,6 +5,10 @@
         //Footballer
         public const int FootballerNameMinLength = 2;
         public const int FootballerNameMaxLength = 40;
+        public const int BestSkillTypeMinValue = 0;
+        public const int BestSkillTypeMaxValue = 4;
+        public const int PositionTypeMinValue = 0;
+        public const int PositionTypeMaxValue = 3;
 
         //Team
         public const int TeamNameMinLength = 3;
