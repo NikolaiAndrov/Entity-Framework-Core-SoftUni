@@ -1,4 +1,4 @@
-﻿namespace Artillery.DataProcessor.ExportDto
+﻿namespace Artillery.DataProcessor.ImportDto
 {
     using Artillery.Common;
     using System.ComponentModel.DataAnnotations;

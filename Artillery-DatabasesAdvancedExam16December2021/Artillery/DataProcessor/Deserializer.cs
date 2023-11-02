@@ -2,7 +2,7 @@
 {
     using Artillery.Data;
     using Artillery.Data.Models;
-    using Artillery.DataProcessor.ExportDto;
+    using Artillery.DataProcessor.ImportDto;
     using Artillery.Utilities;
     using AutoMapper;
     using System.ComponentModel.DataAnnotations;
@@ -55,12 +55,69 @@
         public static string ImportManufacturers(ArtilleryContext context, string xmlString)
         {
             StringBuilder sb = new StringBuilder();
+
+            XmlParser xmlParser = new XmlParser();
+
+            IMapper mapper = AutoMapperConfiguration.CreateMapper();
+
+            ICollection<Manufacturer> validManufacturers = new HashSet<Manufacturer>();
+
+            ImportManufacturerXmlDto[] manufacturerDtos = xmlParser.Deserialize<ImportManufacturerXmlDto[]>(xmlString, "Manufacturers");
+
+            ICollection<string> uniqueManufacturerNames = new HashSet<string>();
+
+            foreach (var manufacturerDto in manufacturerDtos)
+            {
+                if (!IsValid(manufacturerDto) || uniqueManufacturerNames.Contains(manufacturerDto.ManufacturerName))
+                {
+                    sb.AppendLine(ErrorMessage);
+                    continue;
+                }
+
+                uniqueManufacturerNames.Add(manufacturerDto.ManufacturerName);
+
+                string[] founded = manufacturerDto.Founded.Split(", ");
+                string foundedIn = $"{founded[founded.Length - 2]}, {founded[founded.Length - 1]}";
+
+                Manufacturer manufacturer = mapper.Map<Manufacturer>(manufacturerDto);
+                validManufacturers.Add(manufacturer);
+                sb.AppendLine(string.Format(SuccessfulImportManufacturer, manufacturer.ManufacturerName, foundedIn));
+            }
+
+            context.Manufacturers.AddRange(validManufacturers);
+            context.SaveChanges();
+
             return sb.ToString().TrimEnd();
         }
 
         public static string ImportShells(ArtilleryContext context, string xmlString)
         {
             StringBuilder sb = new StringBuilder();
+
+            XmlParser xmlParser = new XmlParser();
+
+            IMapper mapper = AutoMapperConfiguration.CreateMapper();
+
+            ImportShellXmlDto[] shellDtos = xmlParser.Deserialize<ImportShellXmlDto[]>(xmlString, "Shells");
+
+            ICollection<Shell> validShells = new HashSet<Shell>();
+
+            foreach (var shellDto in shellDtos)
+            {
+                if (!IsValid(shellDto))
+                {
+                    sb.AppendLine(ErrorMessage);
+                    continue;
+                }
+
+                Shell shell = mapper.Map<Shell>(shellDto);
+                validShells.Add(shell);
+                sb.AppendLine(string.Format(SuccessfulImportShell, shell.Caliber, shell.ShellWeight));
+            }
+
+            context.Shells.AddRange(validShells);
+            context.SaveChanges();
+
             return sb.ToString().TrimEnd();
         }
 
