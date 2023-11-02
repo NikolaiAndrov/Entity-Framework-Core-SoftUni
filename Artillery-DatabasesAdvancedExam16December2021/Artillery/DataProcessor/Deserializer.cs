@@ -1,7 +1,12 @@
 ﻿namespace Artillery.DataProcessor
 {
     using Artillery.Data;
+    using Artillery.Data.Models;
+    using Artillery.DataProcessor.ExportDto;
+    using Artillery.Utilities;
+    using AutoMapper;
     using System.ComponentModel.DataAnnotations;
+    using System.Text;
 
     public class Deserializer
     {
@@ -18,22 +23,51 @@
 
         public static string ImportCountries(ArtilleryContext context, string xmlString)
         {
-            throw new NotImplementedException();
+            StringBuilder sb = new StringBuilder();
+
+            XmlParser xmlParser = new XmlParser();
+
+            IMapper mapper = AutoMapperConfiguration.CreateMapper();
+
+            ImportCountryXmlDto[] importCountriesDto = xmlParser.Deserialize<ImportCountryXmlDto[]>(xmlString, "Countries");
+
+            ICollection<Country> validCountries = new HashSet<Country>();
+
+            foreach (var countryDto in importCountriesDto)
+            {
+                if (!IsValid(countryDto))
+                {
+                    sb.AppendLine(ErrorMessage);
+                    continue;
+                }
+
+                Country country = mapper.Map<Country>(countryDto);
+                validCountries.Add(country);
+                sb.AppendLine(string.Format(SuccessfulImportCountry, country.CountryName, country.ArmySize));
+            }
+
+            context.Countries.AddRange(validCountries);
+            context.SaveChanges();
+
+            return sb.ToString().TrimEnd();
         }
 
         public static string ImportManufacturers(ArtilleryContext context, string xmlString)
         {
-            throw new NotImplementedException();
+            StringBuilder sb = new StringBuilder();
+            return sb.ToString().TrimEnd();
         }
 
         public static string ImportShells(ArtilleryContext context, string xmlString)
         {
-            throw new NotImplementedException();
+            StringBuilder sb = new StringBuilder();
+            return sb.ToString().TrimEnd();
         }
 
         public static string ImportGuns(ArtilleryContext context, string jsonString)
         {
-            throw new NotImplementedException();
+            StringBuilder sb = new StringBuilder();
+            return sb.ToString().TrimEnd();
         }
         private static bool IsValid(object obj)
         {
