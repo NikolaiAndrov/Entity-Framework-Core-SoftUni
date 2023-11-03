@@ -31,7 +31,7 @@
 
         [Required]
         [JsonProperty("GunType")]
-        public string GunType { get; set; }
+        public string GunType { get; set; } = null!;
 
         [Required]
         [JsonProperty("ManufacturerId")]
