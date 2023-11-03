@@ -20,7 +20,7 @@
         [Required]
         public double BarrelLength { get; set; }
 
-        public int? NumberBuild {  get; set; }    //It might be an issue 
+        public int? NumberBuild {  get; set; }
 
         [Required]
         public int Range { get; set; }

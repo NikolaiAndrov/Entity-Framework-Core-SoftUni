@@ -2,9 +2,11 @@
 {
     using Artillery.Data;
     using Artillery.Data.Models;
+    using Artillery.Data.Models.Enums;
     using Artillery.DataProcessor.ImportDto;
     using Artillery.Utilities;
     using AutoMapper;
+    using Newtonsoft.Json;
     using System.ComponentModel.DataAnnotations;
     using System.Text;
 
@@ -124,6 +126,75 @@
         public static string ImportGuns(ArtilleryContext context, string jsonString)
         {
             StringBuilder sb = new StringBuilder();
+
+            ImportGunDto[] importGunDtos = JsonConvert.DeserializeObject<ImportGunDto[]>(jsonString);
+
+            ICollection<Gun> validGuns = new HashSet<Gun>();
+
+            ICollection<int> existingManufacturers = context.Manufacturers
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            ICollection<int> existingShells = context.Shells
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            ICollection<int> existingCountries = context.Countries
+                .Select(x => x.Id)
+                .ToHashSet();
+
+            foreach (var gunDto in importGunDtos)
+            {
+                if (!IsValid(gunDto) || 
+                    !existingManufacturers.Contains(gunDto.ManufacturerId) ||
+                    !existingShells.Contains(gunDto.ShellId))
+                {
+                    sb.AppendLine(ErrorMessage);
+                    continue;
+                }
+
+
+                if (!Enum.TryParse(gunDto.GunType, true, out GunType gunType))
+                {
+                    sb.AppendLine(ErrorMessage);
+                    continue;
+                }
+
+                Gun gun = new Gun
+                {
+                    GunWeight = gunDto.GunWeight,
+                    BarrelLength = gunDto.BarrelLength,
+                    NumberBuild = gunDto.NumberBuild,
+                    Range = gunDto.Range,
+                    GunType = gunType,
+                    ManufacturerId = gunDto.ManufacturerId,
+                    ShellId = gunDto.ShellId
+                };
+
+                foreach (var countryIdDto in gunDto.Countries)
+                {
+                    if (!existingCountries.Contains(countryIdDto.Id))
+                    {
+                        sb.AppendLine(ErrorMessage);
+                        continue;
+                    }
+
+                    CountryGun countryGun = new CountryGun 
+                    {
+                        CountryId = countryIdDto.Id,
+                        Gun = gun
+                    };
+
+                    gun.CountriesGuns.Add(countryGun);
+                }
+
+                validGuns.Add(gun);
+                sb.AppendLine(string.Format(SuccessfulImportGun, gun.GunType, gun.GunWeight, gun.BarrelLength));
+            }
+
+            context.Guns.AddRange(validGuns);
+            context.SaveChanges();
+
             return sb.ToString().TrimEnd();
         }
         private static bool IsValid(object obj)
